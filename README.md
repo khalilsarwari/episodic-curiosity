@@ -1,6 +1,6 @@
 ## Episodic Curiosity
 
-The underlying codebase is (Stable Baselines 3)[https://github.com/DLR-RM/stable-baselines3]. See OLD_README.md for its original info.
+The underlying codebase is [Stable Baselines 3](https://github.com/DLR-RM/stable-baselines3). See OLD_README.md for its original info.
 
 
 # Getting Started
