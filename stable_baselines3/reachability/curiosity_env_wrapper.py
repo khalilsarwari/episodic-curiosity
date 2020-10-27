@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from episodic_curiosity import episodic_memory
+from stable_baselines3.reachability import episodic_memory
 from stable_baselines3.common.vec_env import VecEnv
 from stable_baselines3.common.vec_env import VecEnvWrapper
 import gym
@@ -69,7 +69,6 @@ class MovingAverage(object):
     return np.mean(self._history)
 
 
-@gin.configurable
 class CuriosityEnvWrapper(VecEnvWrapper):
   """Environment wrapper that adds additional curiosity reward."""
 
@@ -168,12 +167,13 @@ class CuriosityEnvWrapper(VecEnvWrapper):
     else:
       frames = observations
     embedded_observations = self._observation_embedding_fn(frames)
+
     similarity_to_memory = [
         episodic_memory.similarity_to_memory(embedded_observations[k],
                                              self._vec_episodic_memory[k])
         for k in range(self.venv.num_envs)
     ]
-
+  
     # Updates the episodic memory of every environment.
     for k in range(self.venv.num_envs):
       # If we've reached the end of the episode, resets the memory
@@ -192,6 +192,7 @@ class CuriosityEnvWrapper(VecEnvWrapper):
         0.0 if d else 0.5 - s + self._bonus_reward_additive_term
         for (s, d) in zip(similarity_to_memory, dones)
     ]
+    #import pdb; pdb.set_trace()
     bonus_rewards = np.array(bonus_rewards)
     return bonus_rewards
 

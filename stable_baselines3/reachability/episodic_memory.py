@@ -14,16 +14,9 @@
 # limitations under the License.
 
 """Class that represents an episodic memory."""
-from __future__ import absolute_import
-from __future__ import division
-
-from __future__ import print_function
-
-import gin
 import numpy as np
+import torch
 
-
-@gin.configurable
 class EpisodicMemory(object):
   """Episodic memory."""
 
@@ -66,14 +59,14 @@ class EpisodicMemory(object):
                                       10, [0, self._count])
       age_histogram = age_histogram.astype(np.float32)
       age_histogram = age_histogram / np.sum(age_histogram)
-      print('Number of samples added in the previous trajectory: {}'.format(
-          self._count))
-      print('Histogram of sample freshness (old to fresh): {}'.format(
-          age_histogram))
+      # print('Number of samples added in the previous trajectory: {}'.format(
+      #     self._count))
+      # print('Histogram of sample freshness (old to fresh): {}'.format(
+      #     age_histogram))
 
     self._count = 0
     # Stores environment observations.
-    self._obs_memory = np.zeros([self._capacity] + self._observation_shape)
+    self._obs_memory = torch.zeros([self._capacity] + self._observation_shape)
     # Stores the infos returned by the environment. For debugging and
     # visualization purposes.
     self._info_memory = [None] * self._capacity
@@ -117,7 +110,7 @@ class EpisodicMemory(object):
     else:
       index = self._count
 
-    self._obs_memory[index] = observation
+    self._obs_memory[index] = observation.detach().cpu()
     self._info_memory[index] = info
     self._memory_age[index] = self._count
     self._count += 1
@@ -137,13 +130,12 @@ class EpisodicMemory(object):
     # TODO(damienv): could we avoid replicating the observation ?
     # (with some form of broadcasting).
     size = len(self)
-    observation = np.array([observation] * size)
+    observation = torch.stack([observation] * size)
     similarities = self._observation_compare_fn(observation,
                                                 self._obs_memory[:size])
     return similarities
 
 
-@gin.configurable
 def similarity_to_memory(observation,
                          episodic_memory,
                          similarity_aggregation='percentile'):
@@ -169,13 +161,11 @@ def similarity_to_memory(observation,
   # Implements different surrogate aggregated similarities.
   # TODO(damienv): Implement other types of surrogate aggregated similarities.
   if similarity_aggregation == 'max':
-    aggregated = np.max(similarities)
-  elif similarity_aggregation == 'nth_largest':
-    n = min(10, memory_length)
-    aggregated = np.partition(similarities, -n)[-n]
+    aggregated = torch.max(similarities)
   elif similarity_aggregation == 'percentile':
-    percentile = 90
-    aggregated = np.percentile(similarities, percentile)
+    percentile_thresh = 90
+    percentile = lambda t, q: t.view(-1).kthvalue(1 + round(.01 * float(q) * (t.numel() - 1))).values.item()
+    aggregated = percentile(similarities, percentile_thresh)
   elif similarity_aggregation == 'relative_count':
     # Number of samples in the memory similar to the input observation.
     count = sum(similarities > 0.5)

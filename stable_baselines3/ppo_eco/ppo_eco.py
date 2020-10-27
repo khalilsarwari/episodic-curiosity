@@ -89,9 +89,6 @@ class PPO_ECO(OnPolicyAlgorithm):
 
             self.clip_range_vf = get_schedule_fn(self.clip_range_vf)
 
-        import pdb; pdb.set_trace()
-        self.reachability = Reachability(self.env.observation_space, self.config.reachability)
-
     def train(self) -> None:
         """
         Update policy using the currently gathered
