@@ -1,1 +1,1 @@
-# episodic-curiousity
+# episodic-curiosity
