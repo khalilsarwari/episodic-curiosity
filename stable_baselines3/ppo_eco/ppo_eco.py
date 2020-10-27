@@ -12,55 +12,11 @@ from stable_baselines3.common.policies import ActorCriticPolicy
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback
 from stable_baselines3.common.utils import explained_variance, get_schedule_fn
 
+from stable_baselines3.ppo_eco.reachability import Reachability
 
-class PPO(OnPolicyAlgorithm):
+class PPO_ECO(OnPolicyAlgorithm):
     """
-    Proximal Policy Optimization algorithm (PPO) (clip version)
-
-    Paper: https://arxiv.org/abs/1707.06347
-    Code: This implementation borrows code from OpenAI Spinning Up (https://github.com/openai/spinningup/)
-    https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail and
-    and Stable Baselines (PPO2 from https://github.com/hill-a/stable-baselines)
-
-    Introduction to PPO: https://spinningup.openai.com/en/latest/algorithms/ppo.html
-
-    :param policy: The policy model to use (MlpPolicy, CnnPolicy, ...)
-    :param env: The environment to learn from (if registered in Gym, can be str)
-    :param learning_rate: The learning rate, it can be a function
-        of the current progress remaining (from 1 to 0)
-    :param n_steps: The number of steps to run for each environment per update
-        (i.e. batch size is n_steps * n_env where n_env is number of environment copies running in parallel)
-    :param batch_size: Minibatch size
-    :param n_epochs: Number of epoch when optimizing the surrogate loss
-    :param gamma: Discount factor
-    :param gae_lambda: Factor for trade-off of bias vs variance for Generalized Advantage Estimator
-    :param clip_range: Clipping parameter, it can be a function of the current progress
-        remaining (from 1 to 0).
-    :param clip_range_vf: Clipping parameter for the value function,
-        it can be a function of the current progress remaining (from 1 to 0).
-        This is a parameter specific to the OpenAI implementation. If None is passed (default),
-        no clipping will be done on the value function.
-        IMPORTANT: this clipping depends on the reward scaling.
-    :param ent_coef: Entropy coefficient for the loss calculation
-    :param vf_coef: Value function coefficient for the loss calculation
-    :param max_grad_norm: The maximum value for the gradient clipping
-    :param use_sde: Whether to use generalized State Dependent Exploration (gSDE)
-        instead of action noise exploration (default: False)
-    :param sde_sample_freq: Sample a new noise matrix every n steps when using gSDE
-        Default: -1 (only sample at the beginning of the rollout)
-    :param target_kl: Limit the KL divergence between updates,
-        because the clipping is not enough to prevent large update
-        see issue #213 (cf https://github.com/hill-a/stable-baselines/issues/213)
-        By default, there is no limit on the kl div.
-    :param tensorboard_log: the log location for tensorboard (if None, no logging)
-    :param create_eval_env: Whether to create a second environment that will be
-        used for evaluating the agent periodically. (Only available when passing string for the environment)
-    :param policy_kwargs: additional arguments to be passed to the policy on creation
-    :param verbose: the verbosity level: 0 no output, 1 info, 2 debug
-    :param seed: Seed for the pseudo random generators
-    :param device: Device (cpu, cuda, ...) on which the code should be run.
-        Setting it to auto, the code will be run on the GPU if possible.
-    :param _init_setup_model: Whether or not to build the network at the creation of the instance
+    PPO with Online Episodic Curiosity
     """
 
     def __init__(
@@ -91,7 +47,7 @@ class PPO(OnPolicyAlgorithm):
         _init_setup_model: bool = True,
     ):
 
-        super(PPO, self).__init__(
+        super(PPO_ECO, self).__init__(
             policy,
             env,
             learning_rate=learning_rate,
@@ -117,13 +73,13 @@ class PPO(OnPolicyAlgorithm):
         self.clip_range = clip_range
         self.clip_range_vf = clip_range_vf
         self.target_kl = target_kl
+        self.config = config
 
         if _init_setup_model:
             self._setup_model()
-        self.config = config
 
     def _setup_model(self) -> None:
-        super(PPO, self)._setup_model()
+        super(PPO_ECO, self)._setup_model()
 
         # Initialize schedules for policy/value clipping
         self.clip_range = get_schedule_fn(self.clip_range)
@@ -132,6 +88,9 @@ class PPO(OnPolicyAlgorithm):
                 assert self.clip_range_vf > 0, "`clip_range_vf` must be positive, " "pass `None` to deactivate vf clipping"
 
             self.clip_range_vf = get_schedule_fn(self.clip_range_vf)
+
+        import pdb; pdb.set_trace()
+        self.reachability = Reachability(self.env.observation_space, self.config.reachability)
 
     def train(self) -> None:
         """
@@ -250,12 +209,12 @@ class PPO(OnPolicyAlgorithm):
         eval_env: Optional[GymEnv] = None,
         eval_freq: int = -1,
         n_eval_episodes: int = 5,
-        tb_log_name: str = "PPO",
+        tb_log_name: str = "PPO_ECO",
         eval_log_path: Optional[str] = None,
         reset_num_timesteps: bool = True,
-    ) -> "PPO":
+    ) -> "PPO_ECP":
 
-        return super(PPO, self).learn(
+        return super(PPO_ECO, self).learn(
             total_timesteps=total_timesteps,
             callback=callback,
             log_interval=log_interval,
