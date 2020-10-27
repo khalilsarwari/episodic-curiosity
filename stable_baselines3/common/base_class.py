@@ -3,6 +3,8 @@
 import io
 import pathlib
 import time
+import json
+import os
 from abc import ABC, abstractmethod
 from collections import deque
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type, Union
@@ -365,7 +367,9 @@ class BaseAlgorithm(ABC):
         eval_env = self._get_eval_env(eval_env)
 
         # Configure logger's outputs
-        utils.configure_logger(self.verbose, self.tensorboard_log, tb_log_name, reset_num_timesteps)
+        save_path = utils.configure_logger(self.verbose, self.tensorboard_log, tb_log_name, reset_num_timesteps)
+        filename = os.path.join(save_path, 'config.json')
+        json.dump(self.config, open(filename, 'w'), default=lambda o: str(o), indent=4)
 
         # Create eval callback if needed
         callback = self._init_callback(callback, eval_env, eval_freq, n_eval_episodes, log_path)

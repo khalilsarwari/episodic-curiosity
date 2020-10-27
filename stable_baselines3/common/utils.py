@@ -176,6 +176,7 @@ def configure_logger(
     :param tensorboard_log: the log location for tensorboard (if None, no logging)
     :param tb_log_name: tensorboard log
     """
+    save_path = ""
     if tensorboard_log is not None and SummaryWriter is not None:
         latest_run_id = get_latest_run_id(tensorboard_log, tb_log_name)
         if not reset_num_timesteps:
@@ -188,6 +189,7 @@ def configure_logger(
             logger.configure(save_path, ["tensorboard"])
     elif verbose == 0:
         logger.configure(format_strings=[""])
+    return save_path
 
 
 def check_for_correct_spaces(env: GymEnv, observation_space: gym.spaces.Space, action_space: gym.spaces.Space) -> None:

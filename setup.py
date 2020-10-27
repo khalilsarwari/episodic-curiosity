@@ -73,6 +73,7 @@ setup(
         "gym>=0.17",
         "numpy",
         "torch>=1.4.0",
+        "dotmap",
         # For saving models
         "cloudpickle",
         # For reading logs
