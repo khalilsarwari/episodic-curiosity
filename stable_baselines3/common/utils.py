@@ -279,6 +279,15 @@ def safe_mean(arr: Union[np.ndarray, list, deque]) -> np.ndarray:
     """
     return np.nan if len(arr) == 0 else np.mean(arr)
 
+def safe_std(arr: Union[np.ndarray, list, deque]) -> np.ndarray:
+    """
+    Compute the std of an array if there is at least one element.
+    For empty array, return NaN. It is used for logging only.
+
+    :param arr:
+    :return:
+    """
+    return np.nan if len(arr) == 0 else np.std(arr)
 
 def zip_strict(*iterables: Iterable) -> Iterable:
     r"""
