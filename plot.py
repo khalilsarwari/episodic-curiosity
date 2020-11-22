@@ -4,6 +4,9 @@ import numpy as np
 import tensorflow as tf
 from collections import defaultdict
 
+plt_dir = 'plots'
+if not os.path.exists(plt_dir):
+    os.mkdir(plt_dir)
 
 def plot_mean_and_std(mean, std, line_name, title, xaxis='Iterations', yaxis='Extrinsic Reward per Episode', yrange=None):
     """ Plot a mean field and its associated std """
@@ -12,13 +15,13 @@ def plot_mean_and_std(mean, std, line_name, title, xaxis='Iterations', yaxis='Ex
     t = list(range(len(mean)))
     plt.plot(t,mean)
     plt.fill_between(t, (mean-std), (mean+std), color='b', alpha=.1)
-    plt.savefig(f'{title}_plot.png')
+    plt.savefig(os.path.join(plt_dir, f'{title}_plot.png'.replace(' ', '_')))
 
 def plot_result(result, line_name, title, xaxis='Iterations', yaxis='Extrinsic Reward per Episode', yrange=None):
     """ Plot a regular/simple field, a single line """
     t = list(range(len(result)))
     plt.plot(t,result)
-    plt.savefig(f'{title}_plot.png')
+    plt.savefig(os.path.join(plt_dir,f'{title}_plot.png'.replace(' ', '_')))
 
 def get_results(file, fields):
     """ Gets the fields from the tb log """
@@ -31,5 +34,5 @@ def get_results(file, fields):
     return results
 
 if __name__ == "__main__":
-    results = get_results('logs/ppo_eco_breakout/PPO_ECO_3/events.out.tfevents.1606075072.AMS4.8895.0', ['rollout/ep_rew_mean', 'rollout/ep_rew_std'])
+    results = get_results('old_logs/ppo_eco_breakout/PPO_ECO_3/events.out.tfevents.1606075072.AMS4.8895.0', ['rollout/ep_rew_mean', 'rollout/ep_rew_std'])
     plot_mean_and_std(results['rollout/ep_rew_mean'], results['rollout/ep_rew_std'], line_name="Reward", title="Breakout PPO EC")
