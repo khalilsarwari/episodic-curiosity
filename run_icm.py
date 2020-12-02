@@ -6,7 +6,7 @@ from dotmap import DotMap
 import gym
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common import logger
-from stable_baselines3.icm import CuriosityEnvWrapper
+from stable_baselines3.icm import ICMCuriosityEnvWrapper
 from stable_baselines3.icm import ICM
 from stable_baselines3.icm import ICMTrainer
 from torch import nn
@@ -23,7 +23,7 @@ def main(config):
     is_atari_environment = True
     target_image_shape = list(train_env.observation_space.shape)
     
-    train_env =  CuriosityEnvWrapper(train_env, target_image_shape)
+    train_env =  ICMCuriosityEnvWrapper(train_env, icm.reward, icm.forward, target_image_shape)
     icm_trainer = ICMTrainer(icm, observation_history_size=20000, training_interval=500)
     train_env.add_observer(icm_trainer)
     tb_dir = os.path.join(config.log_dir, config.tb_subdir)
@@ -50,7 +50,7 @@ if __name__ == '__main__':
     parser.add_argument('--tb_port', action="store", type=int, default=6006, help="tensorboard port")
     
     # per run args
-    parser.add_argument("--workers", type=int, default=32)
+    parser.add_argument("--workers", type=int, default=1)
     parser.add_argument("--verbose", type=int, default=1)
     parser.add_argument("--final_vis", type=bool, default=False)
     parser.add_argument("--final_vis_steps", type=int, default=1000)
