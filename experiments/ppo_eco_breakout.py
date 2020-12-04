@@ -8,4 +8,4 @@ config.agent = PPO_ECO
 config.environment = 'Breakout-v0'
 config.policy_model = 'CnnPolicy'
 config.tb_subdir = "ppo_eco_breakout"
-config.total_timesteps = 10000000
+config.total_timesteps = 2e6

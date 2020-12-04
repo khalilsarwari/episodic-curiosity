@@ -8,7 +8,7 @@ config.agent = PPO_ICM
 config.environment = 'MontezumaRevenge-v0'
 config.policy_model = 'CnnPolicy'
 config.tb_subdir = "ppo_icm_montezuma"
-config.total_timesteps = 10000000
+config.total_timesteps = 2e6
 config.action_shape = 18
 
 # config.reachability = DotMap()
