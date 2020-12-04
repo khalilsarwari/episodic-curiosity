@@ -187,7 +187,6 @@ class ICMCuriosityEnvWrapper(VecEnvWrapper):
         self._episode_task_reward[i] = 0.0
         self._episode_bonus_reward[i] = 0.0
 
-    #import pdb; pdb.set_trace()
     postprocessed_rewards = np.array(postprocessed_rewards)
     return postprocessed_rewards
 

@@ -97,7 +97,6 @@ class ICMTrainer(object):
     """Do one pass of training of the ICM."""
 
     # Split between train and validation data.
-    __import__('ipdb').set_trace()
     n = len(obs)
     obs, actions, next_obs = np.array(obs), np.array(actions), np.array(next_obs)
     train_count = n // 2
