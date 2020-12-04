@@ -6,7 +6,7 @@ from stable_baselines3 import PPO_ICM
 config = DotMap()
 config.agent = PPO_ICM
 config.environment = 'MontezumaRevenge-v0'
-config.policy_model = 'MlpPolicy'
+config.policy_model = 'CnnPolicy'
 config.tb_subdir = "ppo_icm_montezuma"
 config.total_timesteps = 10000000
 config.action_shape = 18
