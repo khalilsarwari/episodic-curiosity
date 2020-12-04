@@ -90,7 +90,7 @@ class ICMCuriosityEnvWrapper(VecEnvWrapper):
       if append_ec_reward_as_channel:
         observation_space_shape[-1] += 1
       observation_space = gym.spaces.Box(
-          low=0, high=255, shape=observation_space_shape, dtype=np.float)
+          low=0, high=255, shape=observation_space_shape, dtype=np.uint8)
     else:
       observation_space = vec_env.observation_space
       assert not append_ec_reward_as_channel, (

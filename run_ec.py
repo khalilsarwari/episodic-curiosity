@@ -23,7 +23,7 @@ def main(config):
     is_atari_environment = True
     target_image_shape = list(train_env.observation_space.shape)
     train_env =  CuriosityEnvWrapper(train_env, vec_episodic_memory, rnet.embed_observation, target_image_shape)
-    r_network_trainer = RNetworkTrainer(rnet, observation_history_size=20000, training_interval=500)
+    r_network_trainer = RNetworkTrainer(rnet, observation_history_size=20000, training_interval=10000)
     train_env.add_observer(r_network_trainer)
     tb_dir = os.path.join(config.log_dir, config.tb_subdir)
     model = config.agent(config.policy_model, train_env, config, verbose=config.verbose, tensorboard_log=tb_dir)
