@@ -30,7 +30,8 @@ class PhiNet(nn.Module):
         # self.output_size = 512
 
     def forward(self, x):
-        x = x.permute(0, 3, 2, 1).float()
+        # x = x.permute(0, 2, 3, 1).float()
+        x = x.permute(0, 1, 3, 2).float()
         # x = x.permute(0, 3, 2, 1).cuda().float()
         y = F.relu(self.conv1(x))
         y = F.relu(self.conv2(y))
@@ -145,9 +146,9 @@ class ICM(nn.Module):
         action = torch.from_numpy(action)
         state_tp1 = torch.from_numpy(state_tp1)
 
+        # __import__('ipdb').set_trace()
         state_t_hat = self.encoder(state_t)
         state_tp1_hat = self.encoder(state_tp1)
-        # __import__('ipdb').set_trace()
         if self.ensemble_size > 1:
             state_tp1_hat_preds = [forward_model(state_t_hat.detach(), action.detach()) for forward_model in self.forward_models]
             forward_pred_err = forward_scale * torch.var(torch.stack(state_tp1_hat_preds), dim=0).sum(dim=1).unsqueeze(dim=1)
