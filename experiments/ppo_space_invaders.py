@@ -8,4 +8,4 @@ config.agent = PPO
 config.environment = 'SpaceInvaders-v0'
 config.policy_model = 'CnnPolicy'
 config.tb_subdir = "ppo_space_invaders"
-config.total_timesteps = 1000000
+config.total_timesteps = 1e7
