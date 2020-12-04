@@ -6,6 +6,6 @@ from stable_baselines3 import PPO_ECO
 config = DotMap()
 config.agent = PPO_ECO
 config.environment = 'MontezumaRevenge-v0'
-config.policy_model = 'MlpPolicy'
+config.policy_model = 'CnnPolicy'
 config.tb_subdir = "ppo_eco_montezuma"
 config.total_timesteps = 10000000
