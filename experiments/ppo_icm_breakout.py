@@ -9,3 +9,4 @@ config.environment = 'Breakout-v0'
 config.policy_model = 'MlpPolicy'
 config.tb_subdir = "ppo_icm_breakout"
 config.total_timesteps = 10000000
+config.action_shape = 4

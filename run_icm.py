@@ -19,7 +19,7 @@ import utils
 def main(config):
     train_env = make_vec_env(config.environment, n_envs=config.workers)
   
-    icm = ICM(train_env.observation_space.shape)
+    icm = ICM(train_env.observation_space.shape, config.action_shape)
     is_atari_environment = True
     target_image_shape = list(train_env.observation_space.shape)
     
