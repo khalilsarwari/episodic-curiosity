@@ -67,7 +67,7 @@ class ICMTrainer(object):
     self._fifo_index = (
         (self._fifo_index + 1) % len(self._fifo_observations))
     self._fifo_count += 1
-    
+
     if (self._fifo_count > 0 and
         self._fifo_count % self._training_interval == 0):
       print('Training the ICM after: {}'.format(self._fifo_count))
@@ -97,21 +97,35 @@ class ICMTrainer(object):
     """Do one pass of training of the ICM."""
 
     # Split between train and validation data.
+    __import__('ipdb').set_trace()
     n = len(obs)
-    train_count = (95 * n) // 100
-    obs_train, actions_train, next_obs_train = (
-        obs[:train_count], actions[:train_count], next_obs[:train_count])
-    obs_valid, actions_valid, next_obs_valid = (
-        obs[train_count:], actions[train_count:], next_obs[train_count:])
+    obs, actions, next_obs = np.array(obs), np.array(actions), np.array(next_obs)
+    train_count = n // 2
+    # If there's only one ensemble, then use all of the training data.
+    if self._icm_model.ensemble_size < 2:
+      train_count = n
+    # train_count = (95 * n) // 100
+    # obs_train, actions_train, next_obs_train = (
+    #     obs[:train_count], actions[:train_count], next_obs[:train_count])
+    # obs_valid, actions_valid, next_obs_valid = (
+    #     obs[train_count:], actions[train_count:], next_obs[train_count:])
 
-    validation_data = ([np.array(obs_valid), np.array(actions_valid)],
-                       np.array(next_obs_valid))
+    # validation_data = ([np.array(obs_valid), np.array(actions_valid)],
+    #                    np.array(next_obs_valid))
 
-    self.fit(
-        self._generate_batch(obs_train, actions_train, next_obs_train),
-        steps_per_epoch=train_count // self._batch_size,
-        epochs=self._num_epochs,
-        validation_data=validation_data)
+    # For each ensemble model, select a random subset of size n/2
+    # (not necessarily contiguous) from the training sets and train on it.
+    # This ensures that the ensemble models don't converge to the same
+    # function over time.
+    for i in range(self._icm_model.ensemble_size):
+      rand_indices = np.random.permutation(obs.shape[0])[:train_count]
+      obs_train, actions_train, next_obs_train = obs[rand_indices], actions[rand_indices], next_obs[rand_indices]
+      self.fit(
+          self._generate_batch(obs_train, actions_train, next_obs_train),
+          i,
+          steps_per_epoch=train_count // self._batch_size,
+          epochs=self._num_epochs,
+          validation_data=None)
 
     # Note: the same could possibly be achieved using parameters "callback",
     # "initial_epoch", "epochs" in fit_generator. However, this is not really
@@ -126,19 +140,19 @@ class ICMTrainer(object):
     """Generate batches of data used to train the ICM."""
     while True:
       # Train for one epoch.
-      sample_count = len(obs)
+      sample_count = obs.shape[0]
       number_of_batches = sample_count // self._batch_size
       for batch_index in range(number_of_batches):
         from_index = batch_index * self._batch_size
         to_index = (batch_index + 1) * self._batch_size
-        yield (np.array(obs[from_index:to_index]),
-                np.array(actions[from_index:to_index]),
-                np.array(next_obs[from_index:to_index]))
+        yield (obs[from_index:to_index],
+                actions[from_index:to_index],
+                next_obs[from_index:to_index])
 
-  def fit(self, gen, steps_per_epoch, epochs, validation_data):
+  def fit(self, gen, ensemble_index, steps_per_epoch, epochs, validation_data):
     for step in tqdm(range(steps_per_epoch * epochs)):
         obs, actions, next_obs = next(gen)
-        forward_pred_error, inverse_pred_error = self._icm_model(obs, actions, next_obs)
+        forward_pred_error, inverse_pred_error = self._icm_model(ensemble_index, obs, actions, next_obs)
         loss = self._icm_model.loss_fn(forward_pred_error, inverse_pred_error)
         self._opt.zero_grad()
         loss.backward()

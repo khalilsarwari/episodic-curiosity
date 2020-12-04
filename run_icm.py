@@ -18,11 +18,11 @@ import utils
 
 def main(config):
     train_env = make_vec_env(config.environment, n_envs=config.workers)
-  
-    icm = ICM(train_env.observation_space.shape, config.action_shape)
+
+    icm = ICM(train_env.observation_space.shape, config.action_shape, ensemble_size=config.ensemble_size)
     is_atari_environment = True
     target_image_shape = list(train_env.observation_space.shape)
-    
+
     train_env =  ICMCuriosityEnvWrapper(train_env, icm.reward, icm.forward, target_image_shape)
     icm_trainer = ICMTrainer(icm, observation_history_size=20000, training_interval=500)
     train_env.add_observer(icm_trainer)
@@ -48,13 +48,13 @@ if __name__ == '__main__':
     parser.add_argument("-exp", "--experiment", type=str, required=True, help='name of config file in experiment folder')
     parser.add_argument("--log_dir", type=str, default='logs')
     parser.add_argument('--tb_port', action="store", type=int, default=6006, help="tensorboard port")
-    
+
     # per run args
     parser.add_argument("--workers", type=int, default=1)
     parser.add_argument("--verbose", type=int, default=1)
     parser.add_argument("--final_vis", type=bool, default=False)
     parser.add_argument("--final_vis_steps", type=int, default=1000)
-    
+
     args = parser.parse_args()
     config = importlib.import_module('experiments.{}'.format(args.experiment)).config
 

@@ -91,7 +91,7 @@ class PPO_ICM(OnPolicyAlgorithm):
 
             self.clip_range_vf = get_schedule_fn(self.clip_range_vf)
 
-    
+
     def collect_rollouts(
         self, env: VecEnv, callback: BaseCallback, rollout_buffer: RolloutBuffer, n_rollout_steps: int
     ) -> bool:
@@ -133,8 +133,8 @@ class PPO_ICM(OnPolicyAlgorithm):
                 clipped_actions = np.clip(actions, self.action_space.low, self.action_space.high)
 
             new_obs, rewards, dones, infos = env.step(clipped_actions)
-            rewards = env._compute_icm_reward(self._last_obs, clipped_actions, new_obs, rewards, dones, infos)            
-            
+            rewards = env._compute_icm_reward(self._last_obs, clipped_actions, new_obs, rewards, dones, infos)
+
             self.num_timesteps += env.num_envs
 
             # Give access to local variables
