@@ -17,13 +17,13 @@ import utils
 
 def main(config):
     train_env = make_vec_env(config.environment, n_envs=config.workers)
-    rnet = RNetwork(train_env.observation_space.shape)
-    vec_episodic_memory = [EpisodicMemory([64], rnet.embedding_similarity, replacement='fifo', capacity=200)
+    rnet = RNetwork(train_env.observation_space.shape, config.ensemble_size)
+    vec_episodic_memory = [EpisodicMemory([64], rnet.embedding_similarity, replacement='random', capacity=200)
                             for _ in range(config.workers)]
     is_atari_environment = True
     target_image_shape = list(train_env.observation_space.shape)
     train_env =  CuriosityEnvWrapper(train_env, vec_episodic_memory, rnet.embed_observation, target_image_shape)
-    r_network_trainer = RNetworkTrainer(rnet, observation_history_size=20000, training_interval=10000)
+    r_network_trainer = RNetworkTrainer(rnet, observation_history_size=20000, training_interval=2000)
     train_env.add_observer(r_network_trainer)
     tb_dir = os.path.join(config.log_dir, config.tb_subdir)
     model = config.agent(config.policy_model, train_env, config, verbose=config.verbose, tensorboard_log=tb_dir)

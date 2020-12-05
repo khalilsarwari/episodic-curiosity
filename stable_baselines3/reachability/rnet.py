@@ -73,17 +73,18 @@ class SimNet(nn.Module):
 class RNetwork(nn.Module):
   """Encapsulates a trained R network, with lazy loading of weights."""
 
-  def __init__(self, input_shape):
+  def __init__(self, input_shape, ensemble_size):
     """Inits the RNetwork.
 
     Args:
       input_shape: (height, width, channel)
-      weight_path: Path to the weights of the r_network.
+      ensemble_size: number of networks in the ensemble
     """
     super(RNetwork, self).__init__()
+    assert ensemble_size >= 1 and type(ensemble_size)==int, "Invalid ensemble size"
+    self.ensemble_size = ensemble_size
     self._embedding_network = EmbedNet().cuda()
-    self._similarity_network = SimNet().cuda()
-
+    self._similarity_networks = nn.ModuleList([SimNet().cuda() for _ in range(ensemble_size)])
 
   def embed_observation(self, x):
     """Embeds an observation.
@@ -108,6 +109,12 @@ class RNetwork(nn.Module):
       Similarity probabilities. 1 means very similar according to the net.
       0 means very dissimilar. Shape [batch].
     """
-    out = self._similarity_network(x, y)
-    out = torch.sigmoid(out)
-    return out
+    outs = []
+    for i in range(self.ensemble_size):
+      out = self._similarity_networks[i](x, y)
+      out = torch.sigmoid(out)
+      outs.append(out)
+    outs = torch.stack(outs)
+    out_mean = torch.mean(outs, dim=0)
+    uncertainty = torch.std(outs, dim=0, unbiased=False)
+    return out_mean/(uncertainty + 1) # uncertainty modulated similarity (for higher uncertainty/std lean toward dissimilar)

@@ -79,10 +79,10 @@ class CuriosityEnvWrapper(VecEnvWrapper):
                target_image_shape,
                exploration_reward = 'episodic_curiosity',
                scale_task_reward = 1.0,
-               scale_surrogate_reward = 0.0,
+               scale_surrogate_reward = 0.5,
                append_ec_reward_as_channel = False,
                bonus_reward_additive_term = 0,
-               exploration_reward_min_step = 0,
+               exploration_reward_min_step = 5000,
                similarity_threshold = 0.5):
     if exploration_reward == 'episodic_curiosity':
       if len(vec_episodic_memory) != vec_env.num_envs:
