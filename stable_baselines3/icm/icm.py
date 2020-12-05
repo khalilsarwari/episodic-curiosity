@@ -111,7 +111,7 @@ class ICM(nn.Module):
       self.ensemble_size = ensemble_size
       self.forward_models = []
       for _ in range(self.ensemble_size):
-          self.forward_models.append(ForwardNet(self.encoder.output_size, action_shape)).cuda()
+          self.forward_models.append(ForwardNet(self.encoder.output_size, action_shape).cuda())
       self.inverse_model = InverseNet(self.encoder.output_size, action_shape).cuda()
       self.forward_loss = nn.MSELoss(reduction='none')
       self.inverse_loss = nn.CrossEntropyLoss(reduction='none')
