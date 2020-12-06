@@ -22,7 +22,7 @@ def main(config):
     else:
         train_env = make_vec_env(config.environment, n_envs=config.workers)
 
-    icm = ICM(train_env.observation_space.shape, config.action_shape, ensemble_size=config.ensemble_size)
+    icm = ICM(train_env.observation_space.shape, config.action_shape, ensemble_size=config.ensemble_size, use_atari_wrapper=config.atari_wrapper)
     is_atari_environment = True
     target_image_shape = list(train_env.observation_space.shape)
 
@@ -68,9 +68,9 @@ if __name__ == '__main__':
     config = DotMap(config)
 
     # kill existing tensorboard processes on port (in order to refresh)
-    utils.kill_processes_on_port(config.tb_port)
+    # utils.kill_processes_on_port(config.tb_port)
 
-    env = dict(os.environ)   # Make a copy of the current environment
-    subprocess.Popen('tensorboard --host 0.0.0.0 --port {} --logdir ./{}'.format(config.tb_port, config.log_dir), env=env, shell=True)
+    # env = dict(os.environ)   # Make a copy of the current environment
+    # subprocess.Popen('tensorboard --host 0.0.0.0 --port {} --logdir ./{}'.format(config.tb_port, config.log_dir), env=env, shell=True)
 
     main(config)

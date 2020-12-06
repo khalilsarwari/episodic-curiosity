@@ -5,6 +5,41 @@ from torch import nn
 import torch
 import torch.nn.functional as F
 
+class PreprocessAtari(nn.Module):
+    def forward(self, x):
+        if x.dim() == 3:
+            x = x.unsqueeze(0)
+        x = x.permute(1, 0, 2, 3).contiguous().cuda()
+        return x / 255.
+
+class Ipdb(nn.Module):
+    def __init__(self):
+        super().__init__()
+    def forward(self, x):
+        import ipdb; ipdb.set_trace()
+        return x
+
+
+class Flatten(torch.nn.Module):
+    def forward(self, x):
+        batch_size = x.shape[0]
+        return x.view(batch_size, -1)
+
+def create_phinet():
+    return nn.Sequential(
+        PreprocessAtari(),
+        nn.Conv2d(in_channels=1, out_channels=32, kernel_size=8, stride=4),
+        nn.ReLU(),
+        nn.Conv2d(in_channels=32, out_channels=64, kernel_size=4, stride=2),
+        nn.ReLU(),
+        nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, stride=1),
+        nn.ReLU(),
+        Flatten(),
+        nn.Linear(3136, 512),  # 3136 hard-coded based on img size + CNN layers
+        # nn.ReLU(),
+        # nn.Linear(512, 512),
+    )
+
 class PhiNet(nn.Module):
     """
     Raw state to feature encoder
@@ -18,9 +53,11 @@ class PhiNet(nn.Module):
         # self.conv2 = nn.Conv2d(32, 64, kernel_size=(4, 4), stride=(2, 2))
         # self.conv3 = nn.Conv2d(64, 32, kernel_size=(3, 3), stride=(1, 1))
         self.conv1 = nn.Conv2d(3, 32, kernel_size=(10, 10), stride=(5, 5))
+        # self.conv1 = nn.Conv2d(1, 32, kernel_size=(10, 10), stride=(5, 5))
         self.conv2 = nn.Conv2d(32, 64, kernel_size=(6, 6), stride=(3, 3))
         self.conv3 = nn.Conv2d(64, 32, kernel_size=(3, 3), stride=(1, 1))
         self.dense = nn.Linear(32 * 7 * 10, 512)
+        # self.dense = nn.Linear(32 * 2 * 2, 512)
         self.output_size = 512
 
         # self.conv1 = nn.Conv2d(3, 32, kernel_size=(3,3), stride=2, padding=1)
@@ -33,6 +70,7 @@ class PhiNet(nn.Module):
         # x = x.permute(0, 2, 3, 1).float()
         # x = x.permute(0, 1, 3, 2).float()
         x = x.permute(0, 1, 3, 2).cuda().float()
+        # x = x.permute(0, 1, 3, 2).float()
         y = F.relu(self.conv1(x))
         y = F.relu(self.conv2(y))
         y = F.relu(self.conv3(y))
@@ -40,6 +78,7 @@ class PhiNet(nn.Module):
         # print(y.size())
         # torch.Size([1, 32, 16, 22])
         y = F.relu(self.dense(y.view(-1, 32 * 7 * 10)))
+        # y = F.relu(self.dense(y.view(-1, 32 * 2 * 2)))
         return y
 
         # x = x.permute(0, 3, 2, 1).cuda().float()
@@ -99,9 +138,13 @@ class InverseNet(nn.Module):
         return y
 
 class ICM(nn.Module):
-    def __init__(self, obs_shape, action_shape, ensemble_size=1):
+    def __init__(self, obs_shape, action_shape, ensemble_size=1, use_atari_wrapper=False):
       super(ICM, self).__init__()
-      self.encoder = PhiNet(obs_shape).cuda()
+      if use_atari_wrapper:
+          self.encoder = create_phinet().cuda()
+      else:
+          self.encoder = PhiNet(obs_shape).cuda()
+      self.encoder.output_size = 512
       # Ensemble size controls the number of forward models that we have. If
       # it is more than one, then the reward is given by the variance of the
       # forward models.
@@ -112,6 +155,7 @@ class ICM(nn.Module):
       self.forward_models = []
       for _ in range(self.ensemble_size):
           self.forward_models.append(ForwardNet(self.encoder.output_size, action_shape).cuda())
+          # self.forward_models.append(ForwardNet(self.encoder.output_size, action_shape))
       self.inverse_model = InverseNet(self.encoder.output_size, action_shape).cuda()
       self.forward_loss = nn.MSELoss(reduction='none')
       self.inverse_loss = nn.CrossEntropyLoss(reduction='none')
