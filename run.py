@@ -4,7 +4,7 @@ import os
 import subprocess
 from dotmap import DotMap
 import gym
-from stable_baselines3.common.env_util import make_vec_env
+from stable_baselines3.common.env_util import make_vec_env, make_atari_env
 from stable_baselines3.common import logger
 
 import utils
@@ -12,7 +12,10 @@ import utils
 # Regular Runner, no episodic curiosity
 
 def main(config):
-    train_env = make_vec_env(config.environment, n_envs=config.workers)
+    if config.atari_wrapper:
+        train_env = make_atari_env(config.environment, n_envs=config.workers)
+    else:
+        train_env = make_vec_env(config.environment, n_envs=config.workers)
 
     tb_dir = os.path.join(config.log_dir, config.tb_subdir)
     model = config.agent(config.policy_model, train_env, config, verbose=config.verbose, tensorboard_log=tb_dir)
@@ -36,13 +39,14 @@ if __name__ == '__main__':
     parser.add_argument("-exp", "--experiment", type=str, required=True, help='name of config file in experiment folder')
     parser.add_argument("--log_dir", type=str, default='logs')
     parser.add_argument('--tb_port', action="store", type=int, default=6006, help="tensorboard port")
-    
+
     # per run args
     parser.add_argument("--workers", type=int, default=16)
     parser.add_argument("--verbose", type=int, default=1)
     parser.add_argument("--final_vis", type=bool, default=False)
     parser.add_argument("--final_vis_steps", type=int, default=1000)
-    
+    parser.add_argument("--atari_wrapper", type=bool, default=False)
+
     args = parser.parse_args()
     config = importlib.import_module('experiments.{}'.format(args.experiment)).config
 

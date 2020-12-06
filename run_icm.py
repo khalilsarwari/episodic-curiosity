@@ -4,7 +4,7 @@ import os
 import subprocess
 from dotmap import DotMap
 import gym
-from stable_baselines3.common.env_util import make_vec_env
+from stable_baselines3.common.env_util import make_vec_env, make_atari_env
 from stable_baselines3.common import logger
 from stable_baselines3.icm import ICMCuriosityEnvWrapper
 from stable_baselines3.icm import ICM
@@ -17,7 +17,10 @@ import utils
 # Runner with ICM
 
 def main(config):
-    train_env = make_vec_env(config.environment, n_envs=config.workers)
+    if config.atari_wrapper:
+        train_env = make_atari_env(config.environment, n_envs=config.workers)
+    else:
+        train_env = make_vec_env(config.environment, n_envs=config.workers)
 
     icm = ICM(train_env.observation_space.shape, config.action_shape, ensemble_size=config.ensemble_size)
     is_atari_environment = True
@@ -54,6 +57,7 @@ if __name__ == '__main__':
     parser.add_argument("--verbose", type=int, default=1)
     parser.add_argument("--final_vis", type=bool, default=False)
     parser.add_argument("--final_vis_steps", type=int, default=1000)
+    parser.add_argument("--atari_wrapper", type=bool, default=False)
 
     args = parser.parse_args()
     config = importlib.import_module('experiments.{}'.format(args.experiment)).config
