@@ -6,6 +6,7 @@ from stable_baselines3.dqn import DQN
 from stable_baselines3.her import HER
 from stable_baselines3.ppo import PPO
 from stable_baselines3.ppo_eco import PPO_ECO
+from stable_baselines3.ppo_icm import PPO_ICM
 from stable_baselines3.sac import SAC
 from stable_baselines3.td3 import TD3
 

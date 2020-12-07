@@ -78,11 +78,11 @@ class ICMCuriosityEnvWrapper(VecEnvWrapper):
                target_image_shape,
                exploration_reward = 'intrinsic_curiosity',
                scale_task_reward = 1.0,
-               scale_surrogate_reward = 0.0,
+               scale_surrogate_reward = 0.5,
                append_ec_reward_as_channel = False,
                bonus_reward_additive_term = 0,
-               exploration_reward_min_step = 0):
-    
+               exploration_reward_min_step = 5000):
+
     # Note: post-processing of the observation might change the [0, 255]
     # range of the observation...
     if self._should_postprocess_observation(vec_env.observation_space.shape):
@@ -165,7 +165,7 @@ class ICMCuriosityEnvWrapper(VecEnvWrapper):
     else:
       raise ValueError('Unknown exploration reward: {}'.format(
           self._exploration_reward))
-    
+
     # Combined rewards.
     scale_surrogate_reward = self._scale_surrogate_reward
     if self._step_count < self._exploration_reward_min_step:
@@ -173,6 +173,7 @@ class ICMCuriosityEnvWrapper(VecEnvWrapper):
       # the ICM is totally random and the surrogate reward has no
       # meaning.
       scale_surrogate_reward = 0.0
+
     postprocessed_rewards = (self._scale_task_reward * rewards +
                              scale_surrogate_reward * bonus_rewards)
 
@@ -186,14 +187,13 @@ class ICMCuriosityEnvWrapper(VecEnvWrapper):
         self._episode_task_reward[i] = 0.0
         self._episode_bonus_reward[i] = 0.0
 
-    #import pdb; pdb.set_trace()
     postprocessed_rewards = np.array(postprocessed_rewards)
     return postprocessed_rewards
 
   def step_wait(self):
     """Overrides VecEnvWrapper.step_wait."""
     observations, rewards, dones, infos = self.venv.step_wait()
-    
+
     self._step_count += 1
 
     if (self._step_count % 1000) == 0:
@@ -208,7 +208,7 @@ class ICMCuriosityEnvWrapper(VecEnvWrapper):
       infos[i]['task_observation'] = observations[i]
 
     postprocessed_rewards = rewards
-    
+
     # Post-processing on the observation. Note that the reward could be used
     # as an input to the agent. For simplicity we add it as a separate channel.
     postprocessed_observations = self._postprocess_observation(observations,None)
