@@ -19,6 +19,7 @@ from stable_baselines3.common.vec_env import VecEnvWrapper
 import gym
 import numpy as np
 import cv2
+import torch
 
 def resize_observation(frame, image_shape, reward=None):
   """Resize an observation according to the target image shape."""
@@ -117,10 +118,12 @@ class CuriosityEnvWrapper(VecEnvWrapper):
     # Cumulative task reward over an episode.
     self._episode_task_reward = [0.0] * self.venv.num_envs
     self._episode_bonus_reward = [0.0] * self.venv.num_envs
+    self._episode_uncertainty = [0.0] * self.venv.num_envs
 
     # Stats on the task and exploration reward.
     self._stats_task_reward = MovingAverage(capacity=100)
     self._stats_bonus_reward = MovingAverage(capacity=100)
+    self._stats_uncertainty = MovingAverage(capacity=100)
 
     # Total number of steps so far per environment.
     self._step_count = 0
@@ -166,14 +169,19 @@ class CuriosityEnvWrapper(VecEnvWrapper):
       frames = np.array([info['frame'] for info in infos])
     else:
       frames = observations
-    embedded_observations = self._observation_embedding_fn(frames)
+    
+    with torch.no_grad():
+      embedded_observations = self._observation_embedding_fn(frames)
 
-    similarity_to_memory = [
-        episodic_memory.similarity_to_memory(embedded_observations[k],
-                                             self._vec_episodic_memory[k])
-        for k in range(self.venv.num_envs)
-    ]
-  
+      sim_and_uncertainty = [
+          episodic_memory.similarity_to_memory(embedded_observations[k],
+                                              self._vec_episodic_memory[k])
+          for k in range(self.venv.num_envs)
+      ]
+    similarity_to_memory = [res[0] for res in sim_and_uncertainty]
+    uncertainty = [res[1] for res in sim_and_uncertainty]
+    # print(uncertainty, 'OK  ')
+
     # Updates the episodic memory of every environment.
     for k in range(self.venv.num_envs):
       # If we've reached the end of the episode, resets the memory
@@ -188,13 +196,13 @@ class CuriosityEnvWrapper(VecEnvWrapper):
       if similarity_to_memory[k] < self._similarity_threshold:
         self._vec_episodic_memory[k].add(embedded_observations[k], infos[k])
     # Augment the reward with the exploration reward.
+    # ********* Uncertainty modulated similarity (for higher uncertainty/std lean toward dissimilar) ********
     bonus_rewards = [
-        0.0 if d else 0.5 - s + self._bonus_reward_additive_term
-        for (s, d) in zip(similarity_to_memory, dones)
+        0.0 if d else 0.5 - s + u + self._bonus_reward_additive_term
+        for (s, u, d) in zip(similarity_to_memory, uncertainty, dones)
     ]
-    #import pdb; pdb.set_trace()
     bonus_rewards = np.array(bonus_rewards)
-    return bonus_rewards
+    return bonus_rewards, uncertainty
 
   def step_wait(self):
     """Overrides VecEnvWrapper.step_wait."""
@@ -205,10 +213,11 @@ class CuriosityEnvWrapper(VecEnvWrapper):
     self._step_count += 1
 
     if (self._step_count % 1000) == 0:
-      print('step={} task_reward={} bonus_reward={} scale_bonus={}'.format(
+      print('step={} task_reward={} bonus_reward={} uncertainty={} scale_bonus={}'.format(
           self._step_count,
           self._stats_task_reward.mean(),
           self._stats_bonus_reward.mean(),
+          self._stats_uncertainty.mean(),
           self._scale_surrogate_reward))
 
     for i in range(self.venv.num_envs):
@@ -218,7 +227,7 @@ class CuriosityEnvWrapper(VecEnvWrapper):
     # Exploration bonus.
     reward_for_input = None
     if self._exploration_reward == 'episodic_curiosity':
-      bonus_rewards = self._compute_curiosity_reward(observations, infos, dones)
+      bonus_rewards, uncertainty = self._compute_curiosity_reward(observations, infos, dones)
       reward_for_input = bonus_rewards
     elif self._exploration_reward == 'none':
       bonus_rewards = np.zeros(self.venv.num_envs)
@@ -241,11 +250,14 @@ class CuriosityEnvWrapper(VecEnvWrapper):
     for i in range(self.venv.num_envs):
       self._episode_task_reward[i] += rewards[i]
       self._episode_bonus_reward[i] += bonus_rewards[i]
+      self._episode_uncertainty[i] += uncertainty[i]
       if dones[i]:
         self._stats_task_reward.add(self._episode_task_reward[i])
         self._stats_bonus_reward.add(self._episode_bonus_reward[i])
+        self._stats_uncertainty.add(self._episode_uncertainty[i])
         self._episode_task_reward[i] = 0.0
         self._episode_bonus_reward[i] = 0.0
+        self._episode_uncertainty[i] = 0.0
 
     # Post-processing on the observation. Note that the reward could be used
     # as an input to the agent. For simplicity we add it as a separate channel.

@@ -183,6 +183,9 @@ class PPO_ECO(OnPolicyAlgorithm):
         explained_var = explained_variance(self.rollout_buffer.returns.flatten(), self.rollout_buffer.values.flatten())
 
         # Logs
+        logger.record("train/task_reward",self.env._stats_task_reward.mean())
+        logger.record("train/bonus_reward",self.env._stats_bonus_reward.mean())
+        logger.record("train/uncertainty", self.env._stats_uncertainty.mean())
         logger.record("train/entropy_loss", np.mean(entropy_losses))
         logger.record("train/policy_gradient_loss", np.mean(pg_losses))
         logger.record("train/value_loss", np.mean(value_losses))

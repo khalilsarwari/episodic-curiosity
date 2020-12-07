@@ -176,14 +176,12 @@ def create_training_data_from_episode_buffer_v123(episode_buffer,
     labels.append(label)
   return x1, x2, labels
 
-LR = 1e-4
-# TODO: put param above (LR) into a config and pass to class
-
 class RNetworkTrainer(object):
   """Train a R network in an online way."""
 
   def __init__(self,
                r_model,
+               learning_rate=1e-4,
                observation_history_size=20000,
                training_interval=20000,
                num_epochs=4,
@@ -194,7 +192,7 @@ class RNetworkTrainer(object):
       training_interval = observation_history_size
 
     self._r_model = r_model
-    self._opt = torch.optim.Adam(r_model.parameters(), lr=LR)
+    self._opt = torch.optim.Adam(r_model.parameters(), lr=learning_rate)
     self._training_interval = training_interval
     self._batch_size = 128
     self._num_epochs = num_epochs
@@ -361,7 +359,7 @@ class RNetworkTrainer(object):
         x1, x2 = x
         x1_enc = self._r_model.embed_observation(x1)
         x2_enc = self._r_model.embed_observation(x2)
-        pred = self._r_model.embedding_similarity(x1_enc, x2_enc)
+        pred, uncert = self._r_model.embedding_similarity(x1_enc, x2_enc)
         loss = torch.nn.functional.binary_cross_entropy(pred, torch.from_numpy(label).float().cuda().view(-1, 1))
         self._opt.zero_grad()
         loss.backward()

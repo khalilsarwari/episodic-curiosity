@@ -131,9 +131,9 @@ class EpisodicMemory(object):
     # (with some form of broadcasting).
     size = len(self)
     observation = torch.stack([observation] * size)
-    similarities = self._observation_compare_fn(observation,
+    similarities, uncertainty = self._observation_compare_fn(observation,
                                                 self._obs_memory[:size])
-    return similarities
+    return similarities, uncertainty
 
 
 def similarity_to_memory(observation,
@@ -156,8 +156,8 @@ def similarity_to_memory(observation,
   # observations in the memory.
   memory_length = len(episodic_memory)
   if memory_length == 0:
-    return 0.0
-  similarities = episodic_memory.similarity(observation)
+    return 0.0, 0
+  similarities, uncertainty = episodic_memory.similarity(observation)
   # Implements different surrogate aggregated similarities.
   # TODO(damienv): Implement other types of surrogate aggregated similarities.
   if similarity_aggregation == 'max':
@@ -170,5 +170,4 @@ def similarity_to_memory(observation,
     # Number of samples in the memory similar to the input observation.
     count = sum(similarities > 0.5)
     aggregated = float(count) / len(similarities)
-
-  return aggregated
+  return aggregated, uncertainty.mean()

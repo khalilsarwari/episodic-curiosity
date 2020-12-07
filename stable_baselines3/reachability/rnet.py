@@ -20,11 +20,11 @@ from torch import nn
 import torch
 
 class EmbedNet(nn.Module):
-    def __init__(self):
+    def __init__(self, input_shape):
         super(EmbedNet, self).__init__()
         embed_dim = 64
         self.layer1 = nn.Sequential(
-            nn.Conv2d(3, 16, kernel_size=5, stride=1, padding=2),
+            nn.Conv2d(input_shape[-1], 16, kernel_size=5, stride=1, padding=2),
             nn.BatchNorm2d(16),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=4, stride=4))
@@ -43,7 +43,11 @@ class EmbedNet(nn.Module):
             nn.BatchNorm2d(32),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=2, stride=2))
-        self.fc = nn.Linear(960, embed_dim)
+
+        if input_shape == (84, 84, 1):
+          self.fc = nn.Linear(128, embed_dim)
+        else:
+          self.fc = nn.Linear(960, embed_dim)
         
     def forward(self, x):
         x = torch.from_numpy(x/255).permute(0, 3, 2, 1).cuda().float()
@@ -83,7 +87,7 @@ class RNetwork(nn.Module):
     super(RNetwork, self).__init__()
     assert ensemble_size >= 1 and type(ensemble_size)==int, "Invalid ensemble size"
     self.ensemble_size = ensemble_size
-    self._embedding_network = EmbedNet().cuda()
+    self._embedding_network = EmbedNet(input_shape).cuda()
     self._similarity_networks = nn.ModuleList([SimNet().cuda() for _ in range(ensemble_size)])
 
   def embed_observation(self, x):
@@ -113,8 +117,10 @@ class RNetwork(nn.Module):
     for i in range(self.ensemble_size):
       out = self._similarity_networks[i](x, y)
       out = torch.sigmoid(out)
+      if i and (torch.rand(1) > 0.5):
+        out = out.detach() # for enemble training, don't update all networks on same data
       outs.append(out)
     outs = torch.stack(outs)
     out_mean = torch.mean(outs, dim=0)
     uncertainty = torch.std(outs, dim=0, unbiased=False)
-    return out_mean/(uncertainty + 1) # uncertainty modulated similarity (for higher uncertainty/std lean toward dissimilar)
+    return out_mean, uncertainty
