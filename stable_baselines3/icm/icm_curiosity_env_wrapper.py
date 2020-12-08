@@ -157,9 +157,17 @@ class ICMCuriosityEnvWrapper(VecEnvWrapper):
       observer.on_new_observation(obs, actions, next_obs, rewards, dones, infos)
 
     if self._exploration_reward == 'intrinsic_curiosity':
-      bonus_rewards = self._reward_fn(obs, actions, next_obs)
-      bonus_rewards = bonus_rewards.cpu()
-      bonus_rewards = bonus_rewards.detach().numpy()
+      feature_rewards = self._reward_fn(obs, actions, next_obs)
+      b_rewards = np.zeros(self.venv.num_envs)
+      for k in range(self.venv.num_envs):
+        b_rewards[k] = feature_rewards[k]
+
+      bonus_rewards = [
+          0.0 if d else 0.5 - s + self._bonus_reward_additive_term
+          for (s, d) in zip(b_rewards, dones)
+      ]
+
+      bonus_rewards = np.array(bonus_rewards)
     elif self._exploration_reward == 'none':
       bonus_rewards = np.zeros(self.venv.num_envs)
     else:

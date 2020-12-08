@@ -74,9 +74,6 @@ class PhiNet(nn.Module):
         y = F.relu(self.conv1(x))
         y = F.relu(self.conv2(y))
         y = F.relu(self.conv3(y))
-        # print("$$$$ icm")
-        # print(y.size())
-        # torch.Size([1, 32, 16, 22])
         y = F.relu(self.dense(y.view(-1, 32 * 7 * 10)))
         # y = F.relu(self.dense(y.view(-1, 32 * 2 * 2)))
         return y
@@ -169,11 +166,15 @@ class ICM(nn.Module):
         action = torch.from_numpy(action)
         state_tp1 = torch.from_numpy(state_tp1)
 
-        state_t_hat = self.encoder(state_t.squeeze())
-        state_tp1_hat = self.encoder(state_tp1.squeeze())
+        state_t = resize(state_t)
+        action = action.reshape(action.shape[0] * action.shape[1])
+        state_tp1 = resize(state_tp1)
+
+        state_t_hat = self.encoder(state_t)
+        state_tp1_hat = self.encoder(state_tp1)
 
         # Get the discrepancy for the selected forward model
-        state_tp1_hat_pred = self.forward_models[ensemble_index](state_t_hat.detach(), action.squeeze().detach())
+        state_tp1_hat_pred = self.forward_models[ensemble_index](state_t_hat.detach(), action.detach())
         forward_pred_err = forward_scale * self.forward_loss(state_tp1_hat_pred, \
                             state_tp1_hat.detach()).sum(dim=1).unsqueeze(dim=1)
         # state_tp1_hat_preds = [forward_model(state_t_hat.detach(), action.squeeze().detach()) for forward_model in self.forward_models]
@@ -208,3 +209,8 @@ class ICM(nn.Module):
       loss += self.beta * forward_loss
       loss = loss.sum() / loss.flatten().shape[0]
       return loss
+
+def resize(state):
+    state = state.reshape(state.shape[0] * state.shape[1], \
+            state.shape[2], state.shape[3], state.shape[4])
+    return state
