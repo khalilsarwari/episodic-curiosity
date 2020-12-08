@@ -9,5 +9,6 @@ config.environment = 'MontezumaRevenge-v0'
 config.policy_model = 'CnnPolicy'
 config.tb_subdir = "ppo_eco_montezuma"
 config.total_timesteps = 2e6
-config.ensemble_size = 2
+config.ensemble_size = 1
 config.rnet_lr = 1e-4
+config.atari_wrapper = True
