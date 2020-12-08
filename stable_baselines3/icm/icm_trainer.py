@@ -117,10 +117,14 @@ class ICMTrainer(object):
     # This ensures that the ensemble models don't converge to the same
     # function over time.
     for i in range(self._icm_model.ensemble_size):
-      rand_indices = np.random.permutation(obs.shape[0])[:train_count]
-      obs_train, actions_train, next_obs_train = obs[rand_indices], actions[rand_indices], next_obs[rand_indices]
+      rng_state = numpy.random.get_state()
+      numpy.random.shuffle(obs)
+      numpy.random.set_state(rng_state)
+      numpy.random.shuffle(actions)
+      numpy.random.set_state(rng_state)
+      numpy.random.shuffle(next_obs)
       self.fit(
-          self._generate_batch(obs_train, actions_train, next_obs_train),
+          self._generate_batch(obs[:train_count], actions_train[:train_count], next_obs_train[:train_count]),
           i,
           steps_per_epoch=train_count // self._batch_size,
           epochs=self._num_epochs,
