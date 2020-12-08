@@ -53,7 +53,7 @@ if __name__ == '__main__':
     parser.add_argument('--tb_port', action="store", type=int, default=6006, help="tensorboard port")
 
     # per run args
-    parser.add_argument("--workers", type=int, default=1)
+    parser.add_argument("--workers", type=int, default=16)
     parser.add_argument("--verbose", type=int, default=1)
     parser.add_argument("--final_vis", type=bool, default=False)
     parser.add_argument("--final_vis_steps", type=int, default=1000)

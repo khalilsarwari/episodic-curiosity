@@ -10,6 +10,7 @@ class PreprocessAtari(nn.Module):
         if x.dim() == 3:
             x = x.unsqueeze(0)
         # x = x.permute(1, 0, 2, 3).contiguous().cuda()
+        x = x.cuda()
         return x / 255.
 
 class Ipdb(nn.Module):
@@ -197,6 +198,11 @@ class ICM(nn.Module):
         if self.ensemble_size > 1:
             state_tp1_hat_preds = [forward_model(state_t_hat.detach(), action.detach()) for forward_model in self.forward_models]
             forward_pred_err = forward_scale * torch.var(torch.stack(state_tp1_hat_preds), dim=0).sum(dim=1).unsqueeze(dim=1)
+
+            # Add in the prediction error from the first model.
+            state_tp1_hat_pred = state_tp1_hat_preds[0]
+            forward_pred_err += forward_scale * self.forward_loss(state_tp1_hat_pred, \
+                                state_tp1_hat.detach()).mean(dim=1).unsqueeze(dim=1)
         else:
             # forward_pred_err = torch.var(torch.cat(state_tp1_hat_preds), dim=0).sum()
             state_tp1_hat_pred = self.forward_models[0](state_t_hat.detach(), action.detach())
