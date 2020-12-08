@@ -9,7 +9,7 @@ class PreprocessAtari(nn.Module):
     def forward(self, x):
         if x.dim() == 3:
             x = x.unsqueeze(0)
-        x = x.permute(1, 0, 2, 3).contiguous().cuda()
+        # x = x.permute(1, 0, 2, 3).contiguous().cuda()
         return x / 255.
 
 class Ipdb(nn.Module):
@@ -76,7 +76,7 @@ class PhiNet(nn.Module):
         y = F.relu(self.conv3(y))
         y = F.relu(self.dense(y.view(-1, 32 * 7 * 10)))
         # y = F.relu(self.dense(y.view(-1, 32 * 2 * 2)))
-        return y
+        return y / 255.
 
         # x = x.permute(0, 3, 2, 1).cuda().float()
         # x = F.normalize(x)
@@ -112,7 +112,7 @@ class ForwardNet(nn.Module):
         x = torch.cat( (state,action_) ,dim=1)
         y = F.relu(self.linear1(x))
         y = self.linear2(y)
-        return y
+        return y / 255.
 
 class InverseNet(nn.Module):
     """
@@ -132,7 +132,7 @@ class InverseNet(nn.Module):
         y = F.relu(self.linear1(x))
         y = self.linear2(y)
         y = F.softmax(y,dim=1)
-        return y
+        return y / 255.
 
 class ICM(nn.Module):
     def __init__(self, obs_shape, action_shape, ensemble_size=1, use_atari_wrapper=False):
@@ -176,7 +176,7 @@ class ICM(nn.Module):
         # Get the discrepancy for the selected forward model
         state_tp1_hat_pred = self.forward_models[ensemble_index](state_t_hat.detach(), action.detach())
         forward_pred_err = forward_scale * self.forward_loss(state_tp1_hat_pred, \
-                            state_tp1_hat.detach()).sum(dim=1).unsqueeze(dim=1)
+                            state_tp1_hat.detach()).mean(dim=1).unsqueeze(dim=1)
         # state_tp1_hat_preds = [forward_model(state_t_hat.detach(), action.squeeze().detach()) for forward_model in self.forward_models]
 
         # forward_pred_err = forward_scale * torch.var(torch.stack(state_tp1_hat_preds), dim=0).sum(dim=1).unsqueeze(dim=1)
@@ -201,7 +201,7 @@ class ICM(nn.Module):
             # forward_pred_err = torch.var(torch.cat(state_tp1_hat_preds), dim=0).sum()
             state_tp1_hat_pred = self.forward_models[0](state_t_hat.detach(), action.detach())
             forward_pred_err = forward_scale * self.forward_loss(state_tp1_hat_pred, \
-                                state_tp1_hat.detach()).sum(dim=1).unsqueeze(dim=1)
+                                state_tp1_hat.detach()).mean(dim=1).unsqueeze(dim=1)
         return forward_pred_err
 
     def loss_fn(self, forward_loss, inverse_loss):
@@ -211,6 +211,7 @@ class ICM(nn.Module):
       return loss
 
 def resize(state):
-    state = state.reshape(state.shape[0] * state.shape[1], \
-            state.shape[2], state.shape[3], state.shape[4])
+    if state.dim() == 5:
+        state = state.reshape(state.shape[0] * state.shape[1], \
+                state.shape[2], state.shape[3], state.shape[4])
     return state
