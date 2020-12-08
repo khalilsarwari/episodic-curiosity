@@ -197,7 +197,7 @@ class ICM(nn.Module):
         state_tp1_hat = self.encoder(state_tp1)
         if self.ensemble_size > 1:
             state_tp1_hat_preds = [forward_model(state_t_hat.detach(), action.detach()) for forward_model in self.forward_models]
-            forward_pred_err = forward_scale * torch.var(torch.stack(state_tp1_hat_preds), dim=0).sum(dim=1).unsqueeze(dim=1)
+            forward_pred_err = forward_scale * torch.var(torch.stack(state_tp1_hat_preds), dim=0).mean(dim=1).unsqueeze(dim=1)
 
             # Add in the prediction error from the first model.
             state_tp1_hat_pred = state_tp1_hat_preds[0]
