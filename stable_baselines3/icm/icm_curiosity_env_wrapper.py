@@ -163,7 +163,7 @@ class ICMCuriosityEnvWrapper(VecEnvWrapper):
         b_rewards[k] = feature_rewards[k]
 
       bonus_rewards = [
-          0.0 if d else 0.5 - s + self._bonus_reward_additive_term
+          0.0 if d else 0.5 + s + self._bonus_reward_additive_term
           for (s, d) in zip(b_rewards, dones)
       ]
 
