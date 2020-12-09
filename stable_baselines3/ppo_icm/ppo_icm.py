@@ -267,6 +267,7 @@ class PPO_ICM(OnPolicyAlgorithm):
         logger.record("train/loss", loss.item())
         logger.record("train/explained_variance", explained_var)
         logger.record("train/bonus_reward",self.env._stats_bonus_reward.mean())
+        logger.record("train/uncertainty_reward",self.env._stats_uncertainty_reward.mean())
         if hasattr(self.policy, "log_std"):
             logger.record("train/std", th.exp(self.policy.log_std).mean().item())
 

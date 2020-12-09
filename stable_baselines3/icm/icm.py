@@ -197,18 +197,20 @@ class ICM(nn.Module):
         state_tp1_hat = self.encoder(state_tp1)
         if self.ensemble_size > 1:
             state_tp1_hat_preds = [forward_model(state_t_hat.detach(), action.detach()) for forward_model in self.forward_models]
-            forward_pred_err = forward_scale * torch.var(torch.stack(state_tp1_hat_preds), dim=0).mean(dim=1).unsqueeze(dim=1)
+            uncertainty_reward = forward_scale * torch.var(torch.stack(state_tp1_hat_preds), dim=0).mean(dim=1).unsqueeze(dim=1)
 
             # Add in the prediction error from the first model.
             state_tp1_hat_pred = state_tp1_hat_preds[0]
-            forward_pred_err += forward_scale * self.forward_loss(state_tp1_hat_pred, \
+            forward_pred_err = forward_scale * self.forward_loss(state_tp1_hat_pred, \
                                 state_tp1_hat.detach()).mean(dim=1).unsqueeze(dim=1)
         else:
             # forward_pred_err = torch.var(torch.cat(state_tp1_hat_preds), dim=0).sum()
             state_tp1_hat_pred = self.forward_models[0](state_t_hat.detach(), action.detach())
             forward_pred_err = forward_scale * self.forward_loss(state_tp1_hat_pred, \
                                 state_tp1_hat.detach()).mean(dim=1).unsqueeze(dim=1)
-        return forward_pred_err
+            uncertainty_reward = torch.zeros_like(forward_pred_err)
+
+        return forward_pred_err, uncertainty_reward
 
     def loss_fn(self, forward_loss, inverse_loss):
       loss = (1 - self.beta) * inverse_loss
