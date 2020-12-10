@@ -45,7 +45,6 @@ if __name__ == '__main__':
     parser.add_argument("--verbose", type=int, default=1)
     parser.add_argument("--final_vis", type=bool, default=False)
     parser.add_argument("--final_vis_steps", type=int, default=1000)
-    parser.add_argument("--atari_wrapper", type=bool, default=False)
 
     args = parser.parse_args()
     config = importlib.import_module('experiments.{}'.format(args.experiment)).config
