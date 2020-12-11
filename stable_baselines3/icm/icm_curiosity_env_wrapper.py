@@ -211,9 +211,7 @@ class ICMCuriosityEnvWrapper(VecEnvWrapper):
     """Overrides VecEnvWrapper.step_wait."""
     observations, rewards, dones, infos = self.venv.step_wait()
     if self.add_stoch:
-      noise = np.random.randint(low=-10, high=10, size=observations.shape)
-      noisy_obs = observations + noise
-      observations = np.clip(noisy_obs, 0, 255)
+      observations = np.clip(observations + np.random.randint(low=-10, high=10, size=observations.shape), 0, 255)
 
     self._step_count += 1
 
