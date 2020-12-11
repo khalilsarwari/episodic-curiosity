@@ -10,7 +10,7 @@ class PreprocessAtari(nn.Module):
         if x.dim() == 3:
             x = x.unsqueeze(0)
         # x = x.permute(1, 0, 2, 3).contiguous().cuda()
-        x = x.cuda()
+        # x = x.cuda()
         return x / 255.
 
 class Ipdb(nn.Module):
@@ -109,7 +109,7 @@ class ForwardNet(nn.Module):
         indices = torch.stack( (torch.arange(action.shape[0]), action), dim=0)
         indices = indices.tolist()
         action_[indices] = 1.
-        action_ = action_.cuda()
+        # action_ = action_.cuda()
         x = torch.cat( (state,action_) ,dim=1)
         y = F.relu(self.linear1(x))
         y = self.linear2(y)
@@ -139,7 +139,7 @@ class ICM(nn.Module):
     def __init__(self, obs_shape, action_shape, ensemble_size=1, use_atari_wrapper=False):
       super(ICM, self).__init__()
       if use_atari_wrapper:
-          self.encoder = create_phinet().cuda()
+          self.encoder = create_phinet()#.cuda()
       else:
           self.encoder = PhiNet(obs_shape).cuda()
       self.encoder.output_size = 512
@@ -152,9 +152,9 @@ class ICM(nn.Module):
       self.ensemble_size = ensemble_size
       self.forward_models = []
       for _ in range(self.ensemble_size):
-          self.forward_models.append(ForwardNet(self.encoder.output_size, action_shape).cuda())
-          # self.forward_models.append(ForwardNet(self.encoder.output_size, action_shape))
-      self.inverse_model = InverseNet(self.encoder.output_size, action_shape).cuda()
+          # self.forward_models.append(ForwardNet(self.encoder.output_size, action_shape).cuda())
+          self.forward_models.append(ForwardNet(self.encoder.output_size, action_shape))
+      self.inverse_model = InverseNet(self.encoder.output_size, action_shape)#.cuda()
       self.forward_loss = nn.MSELoss(reduction='none')
       self.inverse_loss = nn.CrossEntropyLoss(reduction='none')
       # TODO: weight initialization?
@@ -183,8 +183,8 @@ class ICM(nn.Module):
         # forward_pred_err = forward_scale * torch.var(torch.stack(state_tp1_hat_preds), dim=0).sum(dim=1).unsqueeze(dim=1)
         pred_action = self.inverse_model(state_t_hat, state_tp1_hat)
         inverse_pred_err = inverse_scale * self.inverse_loss(pred_action, \
-                                            # action.detach().flatten()).unsqueeze(dim=1)
-                                            action.cuda().detach().flatten()).unsqueeze(dim=1)
+                                            action.detach().flatten()).unsqueeze(dim=1)
+                                            # action.cuda().detach().flatten()).unsqueeze(dim=1)
         return forward_pred_err, inverse_pred_err
 
     def reward(self, state_t, action, state_tp1, forward_scale=1.0):
