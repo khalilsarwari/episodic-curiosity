@@ -6,6 +6,7 @@ from dotmap import DotMap
 import gym
 from stable_baselines3.common.env_util import make_vec_env, make_atari_env
 from stable_baselines3.common import logger
+from stable_baselines3.dummy import DummyEnvWrapper
 
 import utils
 
@@ -16,6 +17,7 @@ def main(config):
         train_env = make_atari_env(config.environment, n_envs=config.workers)
     else:
         train_env = make_vec_env(config.environment, n_envs=config.workers)
+    train_env = DummyEnvWrapper(train_env, config.add_stoch)
 
     tb_dir = os.path.join(config.log_dir, config.tb_subdir)
     model = config.agent(config.policy_model, train_env, config, verbose=config.verbose, tensorboard_log=tb_dir)
