@@ -78,6 +78,7 @@ class CuriosityEnvWrapper(VecEnvWrapper):
                vec_episodic_memory,
                observation_embedding_fn,
                target_image_shape,
+               add_stoch,
                exploration_reward = 'episodic_curiosity',
                scale_task_reward = 1.0,
                scale_surrogate_reward = 0.5,
@@ -85,6 +86,8 @@ class CuriosityEnvWrapper(VecEnvWrapper):
                bonus_reward_additive_term = 0,
                exploration_reward_min_step = 5000,
                similarity_threshold = 0.5):
+
+    self.add_stoch = add_stoch
     if exploration_reward == 'episodic_curiosity':
       if len(vec_episodic_memory) != vec_env.num_envs:
         raise ValueError('Each env must have a unique episodic memory.')
@@ -207,6 +210,11 @@ class CuriosityEnvWrapper(VecEnvWrapper):
   def step_wait(self):
     """Overrides VecEnvWrapper.step_wait."""
     observations, rewards, dones, infos = self.venv.step_wait()
+    if self.add_stoch:
+      noise = np.random.normal(loc=0, scale= 255**2,size=observations.shape)
+      noisy_obs = observations.astype(np.float32) + noise
+      observations = np.clip(noisy_obs.astype(np.uint8), 0, 255)
+
     for observer in self._observers:
       observer.on_new_observation(observations, rewards, dones, infos)
 

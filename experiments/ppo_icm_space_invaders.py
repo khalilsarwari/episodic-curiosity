@@ -12,3 +12,4 @@ config.total_timesteps = 2e6
 config.action_shape = 6
 config.ensemble_size = 1
 config.atari_wrapper = True
+config.add_stoch = True

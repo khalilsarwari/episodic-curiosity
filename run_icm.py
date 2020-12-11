@@ -25,8 +25,8 @@ def main(config):
     icm = ICM(train_env.observation_space.shape, config.action_shape, ensemble_size=config.ensemble_size, use_atari_wrapper=config.atari_wrapper)
     is_atari_environment = True
     target_image_shape = list(train_env.observation_space.shape)
-
-    train_env =  ICMCuriosityEnvWrapper(train_env, icm.reward, icm.forward, target_image_shape)
+    assert type(config.add_stoch) == bool, "Please indicated whether or not you want stoch added"
+    train_env =  ICMCuriosityEnvWrapper(train_env, icm.reward, icm.forward, target_image_shape, config.add_stoch)
     icm_trainer = ICMTrainer(icm, observation_history_size=20000, training_interval=500)
     train_env.add_observer(icm_trainer)
     tb_dir = os.path.join(config.log_dir, config.tb_subdir)

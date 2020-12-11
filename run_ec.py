@@ -27,7 +27,8 @@ def main(config):
     vec_episodic_memory = [EpisodicMemory([64], rnet.embedding_similarity, replacement='random', capacity=200)
                             for _ in range(config.workers)]
     target_image_shape = list(shape)
-    train_env =  CuriosityEnvWrapper(train_env, vec_episodic_memory, rnet.embed_observation, target_image_shape)
+    assert type(config.add_stoch) == bool, "Please indicated whether or not you want stoch added"
+    train_env =  CuriosityEnvWrapper(train_env, vec_episodic_memory, rnet.embed_observation, target_image_shape, config.add_stoch)
     r_network_trainer = RNetworkTrainer(rnet, learning_rate=config.rnet_lr, observation_history_size=20000, training_interval=2000)
     train_env.add_observer(r_network_trainer)
     tb_dir = os.path.join(config.log_dir, config.tb_subdir)
