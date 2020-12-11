@@ -211,9 +211,9 @@ class CuriosityEnvWrapper(VecEnvWrapper):
     """Overrides VecEnvWrapper.step_wait."""
     observations, rewards, dones, infos = self.venv.step_wait()
     if self.add_stoch:
-      noise = np.random.normal(loc=0, scale= 255**2,size=observations.shape)
-      noisy_obs = observations.astype(np.float32) + noise
-      observations = np.clip(noisy_obs.astype(np.uint8), 0, 255)
+      noise = np.random.randint(low=-10, high=10, size=observations.shape)
+      noisy_obs = observations + noise
+      observations = np.clip(noisy_obs, 0, 255)
 
     for observer in self._observers:
       observer.on_new_observation(observations, rewards, dones, infos)
