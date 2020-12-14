@@ -15,13 +15,13 @@ def plot_mean_and_std(means, stds, title, file_name, xaxis='Iterations', yaxis='
     for i in range(len(means)):
         mean = np.array(means[i])
         std = np.array(stds[i])
-        t = list(range(len(mean)))
+        t = list(range(0, len(mean)*32000, 32000))
         line, = plt.plot(t,mean, color=colors[i])
         lines.append(line)
         plt.fill_between(t, (mean-std), (mean+std), color=colors[i], alpha=.1)
-    # plt.legend(lines, ('PPO', 'PPO_ICM', 'PPO_ECO', 'PPO_ICM_UNCERTAINTY', 'PPO_ECO_UNCERTAINTY'))
+    # plt.legend(lines, ('PPO', 'ICM', 'ECO', 'UM_ICM', 'UM_ECO'))
     plt.xlabel("Number of Timesteps")
-    plt.ylabel("Reward")
+    plt.ylabel("Extrinsic Reward")
     plt.title(title)
     plt.savefig(os.path.join(plt_dir, f'{file_name}_plot.png'.replace(' ', '_')))
 
@@ -57,5 +57,6 @@ if __name__ == "__main__":
             ppo_eco_unc['rollout/ep_rew_std']]
 
     plot_mean_and_std(means, stds, "Space Invaders, Deterministic", file_name="Space-Invaders-Deterministic")
+
 
 
