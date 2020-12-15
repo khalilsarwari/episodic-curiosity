@@ -17,4 +17,8 @@ Running with episodic curiosity
 
 `python run_ec.py -exp ppo_eco_montezuma`
 
-TODO: consolidate the run*.py files
+Running with ICM
+
+`python run_icm.py -exp ppo_icm_montezuma`
+
+Pleae see config files in the experiments folders for additional settings.
